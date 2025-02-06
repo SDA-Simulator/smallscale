@@ -1,0 +1,31 @@
+
+int speed = 5;      // Motor direction connected to digital pin 2
+int direction = 24;    // Motor speed connected to analog pin 3
+int hlspeed = 26;   
+int runstop = 28;   
+int enable = 28; 
+
+void setup()
+{
+
+  pinMode(speed, OUTPUT);       // sets the pin as output
+  pinMode(direction, OUTPUT);     // sets the pin as output
+  pinMode(hlspeed, OUTPUT);
+  pinMode(runstop, OUTPUT);
+  pinMode(runstop, OUTPUT);
+  pinMode(speed, OUTPUT);
+
+  digitalWrite(direction, LOW);     // sets the default dir to be forward. CCW = LOW
+  digitalWrite(hlspeed, LOW);   // sets the default speed to be off
+  digitalWrite(runstop, LOW);
+  digitalWrite(enable, LOW);
+}
+
+void loop()
+{
+  digitalWrite(direction, LOW);
+  analogWrite(speed, 100);
+
+
+
+}
