@@ -1,124 +1,87 @@
 /* Mass Balancing Arduino
  *  Rob Bergbaum, Spencer Bullen, Juan Pelaez
- *  The purpose of this code is to be able to move stepper motors according to a revolution distance as opposed to a given voltage. 
  *  
  *  Notes: In running the motor for like 30 minutes and testing, the motor got unbelieavably hot. 
  *  So, I would recommend not having a long test where the motor is constantly running lol. My b.
+ *  Monitor by going to Tools > Serial Monitor
+ *  
+ *  Some explantions:
+ *    For direction, HIGH = CCW, LOW = CW
+ *    For enable, HIGH = stopping the motor.
 */
 
 // Pin Connections
 int speed = 5;          // Speed = Purple Wire. Motor direction connected to digital pin 5 (PWM)
 int direction = 24;     // Direction = Green Wire. Motor speed connected to digital pin 24.
-int runstop = 28;       // On/Off = White Wire.
-
-/*
+int runstop = 28;       // On/Off = White Wire. Run/Stop connected to digital pin 28.
+int enable = 32;        // Enable = Blue Wire. Enable connected to digital pin 32.
 // int Vplus = XX ;     // Voltage = Red Wire. Connected to power supply, will be battery in future.
 // int ground = XX;     // Ground = Black Wire. Connected to power supply.
-// int enable = XX;     // Enable = Blue Wire. Unused.
 // int hlspeed = XX;    // H/L = Yellow Wire. Unused.   
 // int vr = XX;         // Vr = Orange Wire. Unused, even in the future.
-*/
 
-// ISC02-04 Stepper Motor Constants
-const int stepsPerRev = 200;  // Stepper has 200 steps/rev (360 deg/1.8 deg step)
-const int microstepsPerRev = 3200; // Stepper has 3200 microsteps/rev (given in spec sheet)
-const float maxRPM = 1256; // Maximum speed range (given in spec sheet)
-const float minRPM = 0.75; // Minimum speed range (given in spec sheet)
-const float testRPM = 60;   // This we do not know how fast it actually is rotating. Changes with voltage?
-
-const int commandedRevs = 3;  // Change to your desired number of revs.
-const int commandedSteps = commandedRevs*microstepsPerRev; // Microsteps more accurate, could do steps per rev as well
-const int stepDelay = 500;
-const float secondsOneRev = 60/testRPM;  // Time for one revolution
-const float totalRunTime = secondsOneRev*commandedRevs*1000; // Total time for commanded revs. *1000 for millisecond.
+// ISC02-04 Stepper Motor Constants Given from Spec Sheet
+const int stepsPerRev = 200; const int microstepsPerRev = 3200;   // Stepper has 200 steps/rev (360 deg/1.8 deg step) and 3200 microsteps/rev 
+const int commandedRevs = 3;                                      // Change to your desired number of revs.
+const int commandedSteps = commandedRevs*microstepsPerRev;        // Microsteps more accurate, could do steps per rev as well
+const int stepDelay = 500;                                        // Short pause needed for discrete stepping
 
 // Setting Initial Conditions for Connected Pins
 void setup()
 {
-  Serial.begin(9600);
-  delay(2000); // Wait for serial to initialize
+  Serial.begin(9600); delay(2000);                                // Initialization
   Serial.println("Initial Comm: You're so gorgeous Spencer");
-
-  // Set pins as outputs
-  pinMode(speed, OUTPUT);      
-  pinMode(direction, OUTPUT);    
-  pinMode(runstop, OUTPUT);       
-
-  // pinMode(Vplus, OUTPUT); pinMode(ground, OUTPUT);
-  // pinMode(enable, OUTPUT);
-  // pinMode(hlspeed, OUTPUT); pinMode(vr, OUTPUT);
+  pinMode(speed, OUTPUT); pinMode(direction, OUTPUT); pinMode(runstop, OUTPUT); pinMode(enable, OUTPUT); 
 
   // At this point, should be seeing regular CW rotation at set speed (just giving it a voltage does this)
-  delay(5000);
+  digitalWrite(enable, HIGH); delay(5000);
+  
   // Now, to test working, I switch directions here.
-  digitalWrite(direction, HIGH);     // sets the default direction to be counterclockwise. CCW = HIGH, CW = LOW
-  Serial.println("CCW 1 revolution expected. Not sure how fast.");
-
-  // Test moving to steps instead of set speeds.
-  moveSteps(commandedSteps);  // Move half the commanded revolutions
-  // delay(5000); // Short pause before switching speed
+  digitalWrite(direction, HIGH);
+  Serial.println("CCW 1 revolution expected.");
+  moveSteps(commandedSteps);  // Move the commanded revolutions
 
   // Switch directions again, CW again now.
   digitalWrite(direction, LOW);     // sets the default direction to be counterclockwise. CCW = HIGH, CW = LOW
-  Serial.println("CW 1 revolution expected. Not sure how fast.");
+  Serial.println("CW 1 revolution expected.");
   moveSteps(commandedSteps);  // Move half the commanded revolutions  
-  // delay(1000); // Short pause 
-  // digitalWrite(speed, 0);
-  Serial.println("Done running setup test.");
-  // digitalWrite(runstop, HIGH); // HIGH RUNSTOP should ground it and not move at all.
+  Serial.println("Done running setup test. Loop function begins now.");
 
-/* THIS SNIPPET WAS WORKING BEFORE STEP CONTROL
-  // Ok, when first booted up, it will be running CW by default (low). When upload successful, runs CW for 5 secs, then begins my code.
-  delay(5000);
-  digitalWrite(direction, HIGH);     // sets the default direction to be counterclockwise. CCW = HIGH, CW = LOW
-  Serial.println("Should be moving CCW quickly");
-  analogWrite(speed, 250);          // Sets the default speed to be 25% of max.
-  delay(5000);                      // Run for 5 seconds
-  Serial.println("Should be moving CCW slowly");
-  analogWrite(speed, 10);
-  delay(3000);
-  //analogWrite(speed, 0);              // Stop motor
-  //delay(1000);                       // Short pause before switching direction
-/*  
-  Serial.println("Switching direction...");
-  digitalWrite(direction, HIGH);  // Set CCW direction
-  Serial.println("Running Counterclockwise for 5 seconds...");
-  analogWrite(speed, 80);        // Same speed as before
-  delay(5000);                      // Run for 5 seconds
-  analogWrite(speed, 0);         // Stop motor
-  Serial.println("Motor stopped.");
 
-  // The motor is not stopping..... It can switch from CW to CCW, then back to CW.
+// THIS SNIPPET WAS WORKING BEFORE STEP CONTROL
+/*
+  digitalWrite(enable, HIGH); delay(5000); digitalWrite(enable, LOW);
   
-  // digitalWrite(Vplus, LOW); digitalWrite(ground, LOW);
-  // digitalWrite(enable, LOW); digitalWrite(runstop, LOW);
-  // digitalWrite(hlspeed, LOW); // sets the default speed to be off
-  // digitalWrite(vr, LOW);
+  digitalWrite(direction, HIGH);                     // CCW = HIGH, CW = LOW
+  analogWrite(speed, 200);
+  Serial.println("CCW Fast Rotations"); delay(5000); // Run for 5 seconds
+  
+  analogWrite(speed, 10);
+  Serial.println("CCW Slow Rotations"); delay(3000);
+
+  Serial.println("Switching direction.");
+  digitalWrite(direction, LOW);  
+  analogWrite(speed, 10);                           
+  Serial.println("CW Slow Rotations"); delay(5000); // Run for 5 seconds
+
+  analogWrite(speed, 200);                           
+  Serial.println("CW Fast Rotations"); delay(5000); // Run for 5 seconds
+  Serial.println("Done running setup test. Loop function begins now.");
 */
 }
 
+// moveSteps allows for discrete stepping. speed set to HIGH lets it step once, short delay for the driver, then LOW ends the step.
+// Loop this over how many steps commanded, since this is discrete steps. To make rotate faster, remove the stepDelay/recrease it.
 void moveSteps(int steps) {
   for (int i = 0; i < steps; i++) {
-    digitalWrite(speed, HIGH);
-    delayMicroseconds(stepDelay);
-    digitalWrite(speed, LOW);
-    delayMicroseconds(stepDelay);
+    digitalWrite(speed, HIGH); delayMicroseconds(stepDelay); 
+    digitalWrite(speed, LOW); delayMicroseconds(stepDelay);
   }
 }
 
+// For now, just have loop stopping it. Will have loop with feedback.
 void loop()
 {
-  digitalWrite(runstop, HIGH);
-  /*
-  // Setup code should have the motor moving at 10% max speed in CCW direction.
-  digitalWrite(speed, 0);
-  delay(5000);
-  digitalWrite(direction, LOW);     // sets the default direction to be counterclockwise. CCW = HIGH, CW = LOW
-  Serial.println("Should be moving CW quickly");
-  analogWrite(speed, 250);          // Sets the default speed to be 25% of max.
-  delay(5000);                      // Run for 5 seconds
-  Serial.println("Should be moving CW slowly");
-  analogWrite(speed, 20);
-  delay(3000);
-  */
+  //digitalWrite(runstop, HIGH);
+  digitalWrite(enable, HIGH); // ENABLE ON HIGH = STOP MOVING. This will be an if statement. if(error < tolerance (defined)) then digitalWrite(enable, HIGH)
 }
