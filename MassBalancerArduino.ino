@@ -1,5 +1,5 @@
 /* Mass Balancing Arduino
- *  Rob Bergbaum, Spencer Bullen, Juan Pelaez
+ *  Spencer Bullen, Rob Bergbaum, Juan Pelaez
  *  
  *  Notes: In running the motor for like 30 minutes and testing, the motor got unbelieavably hot. 
  *  So, I would recommend not having a long test where the motor is constantly running lol. My b.
@@ -46,7 +46,6 @@ void setup()
   Serial.println("CW 1 revolution expected.");
   moveSteps(commandedSteps);  // Move half the commanded revolutions  
   Serial.println("Done running setup test. Loop function begins now.");
-
 
 // THIS SNIPPET WAS WORKING BEFORE STEP CONTROL
 /*
