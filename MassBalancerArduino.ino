@@ -30,7 +30,7 @@ const int stepDelay = 500;                                        // Short pause
 void setup()
 {
   Serial.begin(9600); delay(2000);                                // Initialization
-  Serial.println("Initial Comm: You're so gorgeous Spencer");
+  Serial.println("Initial Comm: ");
   pinMode(speed, OUTPUT); pinMode(direction, OUTPUT); pinMode(runstop, OUTPUT); pinMode(enable, OUTPUT); 
 
   // At this point, should be seeing regular CW rotation at set speed (just giving it a voltage does this)
